@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState} from 'react';
 import cloudy from '../Assets/cloudy.png';
 import cloudymix from '../Assets/cloudymix.png';
 import heavyrain from '../Assets/heavyrain.png';
@@ -9,7 +9,14 @@ import rainyday from '../Assets/rainyday.png';
 import './Weather.css';
 import SearchIcon from '@mui/icons-material/Search';
 
-function Weather() {
+interface Props {
+  weatherData: any;
+  onSearch: (city: string) => void;
+}
+
+function Weather({ weatherData, onSearch }: Props) {
+  const [city, setCity] = useState("");
+    
   return (
     <div className='weather'>
         <div className='search-bar'>
