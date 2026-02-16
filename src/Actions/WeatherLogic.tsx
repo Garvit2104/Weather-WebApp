@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Weather from "../Components/Weather";
-import cloudy from '../Assets/cloudy.png';
-import cloudymix from '../Assets/cloudymix.png';
-import heavyrain from '../Assets/heavyrain.png';
-import sun from '../Assets/sun.png';
-import rainyday from '../Assets/rainyday.png';
+import cloudy from "../Assets/cloudy.png";
+import cloudymix from "../Assets/cloudymix.png";
+import heavyrain from "../Assets/heavyrain.png";
+import sun from "../Assets/sun.png";
+import rainyday from "../Assets/rainyday.png";
 
 interface WeatherResponse {
   location: string;
@@ -18,12 +18,33 @@ interface WeatherResponse {
   weather: {
     icon: string;
   };
-  pm25?: number;   // ✅ Added AQI
+  pm25?: number;
+}
+
+interface ForecastDay {
+  date: string;
+  min: number;
+  max: number;
+}
+
+interface HourlyForecast {
+  time: string;
+  temperature: number;
 }
 
 function WeatherLogic() {
-  const [defaultCity, setDefaultCity] = useState<WeatherResponse | null>(null);
-  const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
+  const [defaultCity, setDefaultCity] =
+    useState<WeatherResponse | null>(null);
+  const [weatherData, setWeatherData] =
+    useState<WeatherResponse | null>(null);
+
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [defaultForecast, setDefaultForecast] =
+    useState<ForecastDay[]>([]);
+
+  const [hourly, setHourly] = useState<HourlyForecast[]>([]);
+  const [defaultHourly, setDefaultHourly] =
+    useState<HourlyForecast[]>([]);
 
   const allIcons: { [key: string]: string } = {
     "01d": sun,
@@ -44,16 +65,48 @@ function WeatherLogic() {
     "13n": cloudymix,
   };
 
-  // 🔥 Fetch AQI using lat & lon
+  // ✅ Fetch AQI
   const fetchAQI = async (lat: number, lon: number) => {
-    const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${process.env.REACT_APP_ID}`;
-    const response = await fetch(aqiUrl);
+    const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${process.env.REACT_APP_ID}`;
+    const response = await fetch(url);
     const data = await response.json();
-    return data.list[0].components.pm2_5;
+    return data?.list?.[0]?.components?.pm2_5 || 0;
   };
 
+  // ✅ Fetch Forecast (7 Day + Hourly)
+  const fetchForecast = async (lat: number, lon: number) => {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&forecast_days=7&timezone=auto`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.daily || !data.hourly) {
+      return { dailyData: [], hourlyData: [] };
+    }
+
+    // 7 Day Forecast
+    const dailyData: ForecastDay[] = data.daily.time.map(
+      (date: string, index: number) => ({
+        date,
+        min: Math.floor(data.daily.temperature_2m_min[index]),
+        max: Math.floor(data.daily.temperature_2m_max[index]),
+      })
+    );
+
+    // Hourly Forecast (first 12 hours)
+    const hourlyData: HourlyForecast[] = data.hourly.time
+      .map((time: string, index: number) => ({
+        time,
+        temperature: Math.floor(data.hourly.temperature_2m[index]),
+      }))
+      .slice(0, 12);
+
+    return { dailyData, hourlyData };
+  };
+
+  // ✅ Search City
   const search = async (city: string) => {
-    if (!city) {
+    if (!city.trim()) {
       alert("Please enter a city name");
       return;
     }
@@ -72,8 +125,12 @@ function WeatherLogic() {
       const iconCode = data.weather[0].icon;
       const icon = allIcons[iconCode] || sun;
 
-      // ✅ Get AQI
-      const aqi = await fetchAQI(data.coord.lat, data.coord.lon);
+      const lat = data.coord.lat;
+      const lon = data.coord.lon;
+
+      const aqi = await fetchAQI(lat, lon);
+      const { dailyData, hourlyData } =
+        await fetchForecast(lat, lon);
 
       setWeatherData({
         location: data.name,
@@ -85,19 +142,25 @@ function WeatherLogic() {
           speed: data.wind.speed,
         },
         weather: {
-          icon: icon,
+          icon,
         },
-        pm25: aqi
+        pm25: aqi,
       });
 
+      setForecast(dailyData);
+      setHourly(hourlyData);
+
     } catch (error) {
-      console.log("Error loading data:", error);
+      console.log("Search error:", error);
     }
   };
 
+  // ✅ Default City Load
   const fetchDefaultCity = async () => {
     try {
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=New Delhi&appid=${process.env.REACT_APP_ID}&units=metric`;
+      const city = "New Delhi";
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.REACT_APP_ID}&units=metric`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -105,8 +168,12 @@ function WeatherLogic() {
       const iconCode = data.weather[0].icon;
       const icon = allIcons[iconCode] || sun;
 
-      // ✅ Get AQI
-      const aqi = await fetchAQI(data.coord.lat, data.coord.lon);
+      const lat = data.coord.lat;
+      const lon = data.coord.lon;
+
+      const aqi = await fetchAQI(lat, lon);
+      const { dailyData, hourlyData } =
+        await fetchForecast(lat, lon);
 
       setDefaultCity({
         location: data.name,
@@ -118,19 +185,22 @@ function WeatherLogic() {
           speed: data.wind.speed,
         },
         weather: {
-          icon: icon,
+          icon,
         },
-        pm25: aqi,   // ✅ store AQI
+        pm25: aqi,
       });
 
+      setDefaultForecast(dailyData);
+      setDefaultHourly(hourlyData);
+
     } catch (error) {
-      console.log("Error loading default city:", error);
+      console.log("Default city error:", error);
     }
   };
 
   useEffect(() => {
     fetchDefaultCity();
-    search("Mumbai");
+    search("Mumbai"); // Optional initial search
   }, []);
 
   return (
@@ -138,6 +208,10 @@ function WeatherLogic() {
       weatherData={weatherData}
       defaultCity={defaultCity}
       onSearch={search}
+      forecast={forecast}
+      defaultForecast={defaultForecast}
+      hourly={hourly}
+      defaultHourly={defaultHourly}
     />
   );
 }

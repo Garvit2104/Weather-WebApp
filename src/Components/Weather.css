@@ -16,6 +16,7 @@
     display: flex;
     flex-direction: column;
     gap: 30px;
+    z-index: 1;
 }
 
 .bg-top {
@@ -58,11 +59,11 @@
 
 .weather {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 48%;
+    left: 52%;
     transform: translate(-50%, -50%);
 
-    width: 400px;
+    width: 590px;
     padding: 40px;
     border-radius: 20px;
     background-image: linear-gradient(45deg, #2f4680, #500ae4);
@@ -93,24 +94,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 15px;
     margin-bottom: 25px;
 }
 
 .search-input {
-    height: 55px;
+    height: 65px;
     border: none;
     outline: none;
     border-radius: 25px;
     padding: 0 20px;
-    font-size: 18px;
+    font-size: 20px;
     background: #ebfffc;
-    width: 240px;
+    width: 280px;
 }
 
 .search-button {
-    height: 50px;
-    width: 50px;
+    height: 60px;
+    width: 60px;
     border: none;
     border-radius: 50%;
     background: #ebfffc;
@@ -130,7 +131,7 @@
 }
 
 .location {
-    font-size: 24px;
+    font-size: 32px;
     margin-bottom: 25px;
 }
 
@@ -167,5 +168,60 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
+}
+
+.forecast-section {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.forecast-container {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
+}
+
+.forecast-container::-webkit-scrollbar {
+  display: none;
+}
+
+.forecast-card {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  border-radius: 10px;
+  min-width: 90px;
+  backdrop-filter: blur(5px);
+}
+
+.hourly-section {
+  margin: 20px 0;
+}
+
+.hourly-container {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
+}
+
+.hourly-container::-webkit-scrollbar {
+  display: none;
+}
+
+.hourly-card {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  border-radius: 12px;
+  min-width: 75px;
+  text-align: center;
+  backdrop-filter: blur(5px);
+}
+
+.hourly-card p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
